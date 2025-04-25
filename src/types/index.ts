@@ -1,16 +1,21 @@
 import { z } from "zod";
 
+export type UserRole = 'admin' | 'manager' | 'user';
+
 export type User = {
   id: string;
-  phone: string;
   name: string;
+  email: string;
+  phone: string;
+  role?: UserRole;
+  companyId?: string;
 };
 
-export type FunnelStage = 'new' | 'qualifying' | 'proposal' | 'closed' | 'rejected';
+export type FunnelStage = 'new' | 'qualifying' | 'proposal' | 'negotiation' | 'closed' | 'rejected';
 
-export type LeadStatus = 'active' | 'won' | 'lost';
+export type LeadStatus = 'active' | 'inactive' | 'won' | 'lost';
 
-export type LeadSource = 'instagram' | 'whatsapp' | 'website' | 'referral' | 'trafego' | 'other';
+export type LeadSource = 'website' | 'referral' | 'instagram' | 'facebook' | 'whatsapp' | 'trafego';
 
 export type Car = {
   id: string;
@@ -33,7 +38,32 @@ export type Lead = {
   stage: FunnelStage;
   status: LeadStatus;
   interest: string;
-  notes: string;
+  notes?: string;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+export type Company = {
+  id: string;
+  name: string;
+  cnpj: string;
+  address: string;
+  phone: string;
+  email?: string;
+  logo?: string;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+export type Seller = {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  companyId: string;
+  role?: string;
+  avatar?: string;
+  active: boolean;
   createdAt: Date;
   updatedAt: Date;
 };

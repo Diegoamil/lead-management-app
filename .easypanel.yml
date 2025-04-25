@@ -1,0 +1,24 @@
+name: lead-management-app
+type: nixpacks
+env:
+  - name: DATABASE_URL
+    value: postgres://postgres:9d3b0b15d9221b004178@157.180.45.175:5431/leads?sslmode=disable
+  - name: NODE_ENV
+    value: production
+  - name: PORT
+    value: 3000
+domains:
+  - domain: leads.exemplo.com
+    primary: true
+    https: true
+git:
+  repo: https://github.com/seu-usuario/lead-management-app
+  branch: main
+  deploy_on_push: true
+resources:
+  cpu: 1
+  memory: 1024
+  disk: 2048
+healthcheck:
+  path: /
+  port: 3000

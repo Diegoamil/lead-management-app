@@ -6,6 +6,7 @@ import { Input } from '../components/ui/Input';
 import { Select } from '../components/ui/Select';
 import { Combobox } from '../components/ui/Combobox';
 import { Button } from '../components/ui/Button';
+import { PhoneInput } from '../components/ui/PhoneInput';
 import { CarModal } from '../components/car/CarModal';
 import { useLeads } from '../context/LeadContext';
 import { useCars } from '../context/CarContext';
@@ -82,12 +83,11 @@ export function NewLeadPage() {
             required
           />
           
-          <Input
+          <PhoneInput
             label="Telefone"
-            type="tel"
-            placeholder="(00) 00000-0000"
             value={phone}
-            onChange={(e) => setPhone(e.target.value)}
+            onChange={setPhone}
+            placeholder="(00) 0 0000-0000"
             required
           />
           

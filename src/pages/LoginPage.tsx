@@ -2,12 +2,14 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Car } from 'lucide-react';
 import { Input } from '../components/ui/Input';
+import { PasswordInput } from '../components/ui/PasswordInput';
 import { Button } from '../components/ui/Button';
 import { useAuth } from '../context/AuthContext';
 
 export function LoginPage() {
-  const [phone, setPhone] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   
@@ -20,10 +22,14 @@ export function LoginPage() {
     setIsLoading(true);
     
     try {
-      await login(phone, password);
-      navigate('/dashboard');
+      const success = await login(email, password, rememberMe);
+      if (success) {
+        navigate('/dashboard');
+      } else {
+        setError('Email ou senha inválidos');
+      }
     } catch (err) {
-      setError('Telefone ou senha inválidos');
+      setError('Erro ao fazer login. Tente novamente.');
     } finally {
       setIsLoading(false);
     }
@@ -41,24 +47,36 @@ export function LoginPage() {
       
       <form onSubmit={handleSubmit} className="space-y-4">
         <Input
-          label="Telefone"
-          type="tel"
-          placeholder="(00) 00000-0000"
-          value={phone}
-          onChange={(e) => setPhone(e.target.value)}
+          label="Email"
+          type="email"
+          placeholder="seu@email.com"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
           required
-          autoComplete="tel"
+          autoComplete="email"
         />
         
-        <Input
+        <PasswordInput
           label="Senha"
-          type="password"
           placeholder="Digite sua senha"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required
           autoComplete="current-password"
         />
+        
+        <div className="flex items-center">
+          <input
+            type="checkbox"
+            id="rememberMe"
+            checked={rememberMe}
+            onChange={(e) => setRememberMe(e.target.checked)}
+            className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+          />
+          <label htmlFor="rememberMe" className="ml-2 block text-sm text-gray-700">
+            Manter logado
+          </label>
+        </div>
         
         {error && <p className="text-red-500 text-sm">{error}</p>}
         

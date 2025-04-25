@@ -1,10 +1,15 @@
-import React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Home, Plus, User } from 'lucide-react';
+import { Home, Plus, User, Building2, Users } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
 
-export function BottomNav() {
+type BottomNavProps = {
+  showCompaniesTab?: boolean;
+};
+
+export function BottomNav({ showCompaniesTab = false }: BottomNavProps) {
   const location = useLocation();
   const navigate = useNavigate();
+  const { isManager } = useAuth();
   
   // Hide on login page
   if (location.pathname === '/login') {
@@ -16,13 +21,28 @@ export function BottomNav() {
       <div className="flex items-center justify-around h-16">
         <button
           onClick={() => navigate('/dashboard')}
-          className={`flex flex-col items-center justify-center w-1/3 h-full ${
+          className={`flex flex-col items-center justify-center ${
+            showCompaniesTab ? 'w-1/5' : 'w-1/4'
+          } h-full ${
             location.pathname === '/dashboard' ? 'text-blue-600' : 'text-gray-500'
           }`}
         >
-          <Home size={24} />
+          <Home size={20} />
           <span className="text-xs mt-1">Leads</span>
         </button>
+        
+        {/* Mostrar botão de Empresas apenas para administradores */}
+        {showCompaniesTab && (
+          <button
+            onClick={() => navigate('/companies')}
+            className={`flex flex-col items-center justify-center w-1/5 h-full ${
+              location.pathname === '/companies' ? 'text-blue-600' : 'text-gray-500'
+            }`}
+          >
+            <Building2 size={20} />
+            <span className="text-xs mt-1">Empresas</span>
+          </button>
+        )}
         
         <button
           onClick={() => navigate('/new-lead')}
@@ -31,13 +51,30 @@ export function BottomNav() {
           <Plus size={24} />
         </button>
         
+        {/* Mostrar botão de Vendedores apenas para gerentes ou administradores */}
+        {isManager && (
+          <button
+            onClick={() => navigate('/sellers')}
+            className={`flex flex-col items-center justify-center ${
+              showCompaniesTab ? 'w-1/5' : 'w-1/4'
+            } h-full ${
+              location.pathname === '/sellers' ? 'text-blue-600' : 'text-gray-500'
+            }`}
+          >
+            <Users size={20} />
+            <span className="text-xs mt-1">Vendedores</span>
+          </button>
+        )}
+        
         <button
           onClick={() => navigate('/profile')}
-          className={`flex flex-col items-center justify-center w-1/3 h-full ${
+          className={`flex flex-col items-center justify-center ${
+            showCompaniesTab ? 'w-1/5' : 'w-1/4'
+          } h-full ${
             location.pathname === '/profile' ? 'text-blue-600' : 'text-gray-500'
           }`}
         >
-          <User size={24} />
+          <User size={20} />
           <span className="text-xs mt-1">Perfil</span>
         </button>
       </div>

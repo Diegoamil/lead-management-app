@@ -1,108 +1,124 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { Lead, FunnelStage, LeadStatus, LeadSource } from '../types';
+import { Lead, FunnelStage } from '../types';
+import { fetchLeads, fetchLeadById, createLead, updateLead } from '../api/leadApi';
+import { useAuth } from './AuthContext';
 
 type LeadContextType = {
   leads: Lead[];
   isLoading: boolean;
-  addLead: (lead: Omit<Lead, 'id' | 'createdAt' | 'updatedAt'>) => void;
-  updateLead: (id: string, updates: Partial<Lead>) => void;
-  getLead: (id: string) => Lead | undefined;
+  addLead: (lead: Omit<Lead, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
+  updateLead: (id: string, updates: Partial<Lead>) => Promise<void>;
+  getLead: (id: string) => Promise<Lead | undefined>;
   filteredLeads: (stage?: FunnelStage | 'all') => Lead[];
 };
 
 const LeadContext = createContext<LeadContextType | undefined>(undefined);
 
-// Mock data for demonstration purposes
-const mockLeads: Lead[] = [
-  {
-    id: '1',
-    name: 'Carlos Oliveira',
-    phone: '(11) 98765-4321',
-    source: 'instagram',
-    stage: 'new',
-    status: 'active',
-    interest: 'SUV compacto',
-    notes: 'Interessado no modelo XYZ, precisa de financiamento',
-    createdAt: new Date(),
-    updatedAt: new Date()
-  },
-  {
-    id: '2',
-    name: 'Maria Silva',
-    phone: '(11) 91234-5678',
-    source: 'whatsapp',
-    stage: 'qualifying',
-    status: 'active',
-    interest: 'Sedan médio',
-    notes: 'Já possui um veículo, busca upgrade',
-    createdAt: new Date(),
-    updatedAt: new Date()
-  },
-  {
-    id: '3',
-    name: 'Lucas Mendes',
-    phone: '(11) 97777-8888',
-    source: 'website',
-    stage: 'proposal',
-    status: 'active',
-    interest: 'Picape',
-    notes: 'Negociando desconto, quer fechar na próxima semana',
-    createdAt: new Date(),
-    updatedAt: new Date()
-  },
-  {
-    id: '4',
-    name: 'Ana Paula Costa',
-    phone: '(11) 95555-4444',
-    source: 'referral',
-    stage: 'closed',
-    status: 'won',
-    interest: 'Hatch esportivo',
-    notes: 'Fechou compra à vista',
-    createdAt: new Date(),
-    updatedAt: new Date()
-  }
-];
-
 export function LeadProvider({ children }: { children: React.ReactNode }) {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const { user } = useAuth();
 
   useEffect(() => {
-    // In a real app, this would be an API call
-    // For demo, we'll use the mock data with a delay
+    // Carregar leads quando o usuário estiver logado
     const loadLeads = async () => {
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      setLeads(mockLeads);
-      setIsLoading(false);
+      if (!user || !user.id || !user.companyId) {
+        setLeads([]);
+        setIsLoading(false);
+        return;
+      }
+
+      try {
+        setIsLoading(true);
+        const leadsData = await fetchLeads(user.id, user.companyId);
+        
+        // Converter as datas de string para objeto Date
+        const formattedLeads = leadsData.map(lead => ({
+          ...lead,
+          createdAt: new Date(lead.createdAt),
+          updatedAt: new Date(lead.updatedAt)
+        }));
+        
+        setLeads(formattedLeads);
+      } catch (error) {
+        console.error('Erro ao carregar leads:', error);
+      } finally {
+        setIsLoading(false);
+      }
     };
     
     loadLeads();
-  }, []);
+  }, [user]);
 
-  const addLead = (leadData: Omit<Lead, 'id' | 'createdAt' | 'updatedAt'>) => {
-    const newLead: Lead = {
-      ...leadData,
-      id: Date.now().toString(),
-      createdAt: new Date(),
-      updatedAt: new Date()
-    };
-    
-    setLeads(prevLeads => [newLead, ...prevLeads]);
+  const addLead = async (leadData: Omit<Lead, 'id' | 'createdAt' | 'updatedAt'>): Promise<void> => {
+    if (!user || !user.id || !user.companyId) {
+      throw new Error('Usuário não autenticado');
+    }
+
+    try {
+      const newLead = await createLead(leadData, user.id, user.companyId);
+      
+      // Converter as datas de string para objeto Date
+      const formattedLead = {
+        ...newLead,
+        createdAt: new Date(newLead.createdAt),
+        updatedAt: new Date(newLead.updatedAt)
+      };
+      
+      setLeads(prevLeads => [formattedLead, ...prevLeads]);
+    } catch (error) {
+      console.error('Erro ao adicionar lead:', error);
+      throw error;
+    }
   };
 
-  const updateLead = (id: string, updates: Partial<Lead>) => {
-    setLeads(prevLeads => 
-      prevLeads.map(lead => 
-        lead.id === id 
-          ? { ...lead, ...updates, updatedAt: new Date() } 
-          : lead
-      )
-    );
+  const updateLeadState = async (id: string, updates: Partial<Lead>): Promise<void> => {
+    if (!user || !user.id || !user.companyId) {
+      throw new Error('Usuário não autenticado');
+    }
+
+    try {
+      const updatedLead = await updateLead(id, updates, user.id, user.companyId);
+      
+      // Converter as datas de string para objeto Date
+      const formattedLead = {
+        ...updatedLead,
+        createdAt: new Date(updatedLead.createdAt),
+        updatedAt: new Date(updatedLead.updatedAt)
+      };
+      
+      // Atualizar o estado local
+      setLeads(prevLeads => 
+        prevLeads.map(lead => 
+          lead.id === id 
+            ? formattedLead
+            : lead
+        )
+      );
+    } catch (error) {
+      console.error('Erro ao atualizar lead:', error);
+      throw error;
+    }
   };
 
-  const getLead = (id: string) => {
-    return leads.find(lead => lead.id === id);
+  const getLead = async (id: string): Promise<Lead | undefined> => {
+    if (!user || !user.id || !user.companyId) {
+      throw new Error('Usuário não autenticado');
+    }
+
+    try {
+      const lead = await fetchLeadById(id, user.id, user.companyId);
+      
+      // Converter as datas de string para objeto Date
+      return {
+        ...lead,
+        createdAt: new Date(lead.createdAt),
+        updatedAt: new Date(lead.updatedAt)
+      };
+    } catch (error) {
+      console.error(`Erro ao buscar lead ${id}:`, error);
+      return undefined;
+    }
   };
 
   const filteredLeads = (stage?: FunnelStage | 'all') => {
@@ -117,7 +133,7 @@ export function LeadProvider({ children }: { children: React.ReactNode }) {
       leads, 
       isLoading, 
       addLead, 
-      updateLead, 
+      updateLead: updateLeadState, 
       getLead, 
       filteredLeads 
     }}>
