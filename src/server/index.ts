@@ -494,6 +494,101 @@ app.put('/api/leads/:id', async (req: Request, res: Response) => {
   }
 });
 
+// Rota para criar um usuário administrador (apenas para desenvolvimento)
+app.post('/api/create-admin', async (req: Request, res: Response) => {
+  try {
+    const { name, email, phone, password, companyId } = req.body;
+    
+    if (!name || !email || !phone || !password) {
+      return res.status(400).json({ error: 'Todos os campos são obrigatórios' });
+    }
+    
+    // Verificar se o usuário já existe
+    const existingUser = await prisma.user.findUnique({
+      where: { email }
+    });
+    
+    if (existingUser) {
+      return res.status(400).json({ error: 'Usuário já existe' });
+    }
+    
+    // Verificar se a empresa existe
+    if (companyId) {
+      const company = await prisma.company.findUnique({
+        where: { id: companyId }
+      });
+      
+      if (!company) {
+        return res.status(400).json({ error: 'Empresa não encontrada' });
+      }
+    }
+    
+    // Criar o usuário administrador
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const user = await prisma.user.create({
+      data: {
+        name,
+        email,
+        phone,
+        password: hashedPassword,
+        role: 'admin',
+        companyId
+      }
+    });
+    
+    // Remover a senha da resposta
+    const { password: _, ...userData } = user;
+    
+    res.status(201).json({
+      message: 'Usuário administrador criado com sucesso',
+      user: userData
+    });
+  } catch (error) {
+    console.error('Erro ao criar usuário administrador:', error);
+    res.status(500).json({ error: 'Erro ao criar usuário administrador' });
+  }
+});
+
+// Rota para atualizar a senha de um usuário (apenas para desenvolvimento)
+app.post('/api/update-password', async (req: Request, res: Response) => {
+  try {
+    const { email, password } = req.body;
+    
+    if (!email || !password) {
+      return res.status(400).json({ error: 'Email e senha são obrigatórios' });
+    }
+    
+    // Verificar se o usuário existe
+    const existingUser = await prisma.user.findUnique({
+      where: { email }
+    });
+    
+    if (!existingUser) {
+      return res.status(404).json({ error: 'Usuário não encontrado' });
+    }
+    
+    // Atualizar a senha do usuário
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const user = await prisma.user.update({
+      where: { email },
+      data: {
+        password: hashedPassword
+      }
+    });
+    
+    // Remover a senha da resposta
+    const { password: _, ...userData } = user;
+    
+    res.json({
+      message: 'Senha atualizada com sucesso',
+      user: userData
+    });
+  } catch (error) {
+    console.error('Erro ao atualizar senha:', error);
+    res.status(500).json({ error: 'Erro ao atualizar senha' });
+  }
+});
+
 // Iniciar o servidor
 app.listen(PORT, () => {
   console.log(`Servidor rodando na porta ${PORT}`);
